@@ -1,9 +1,10 @@
 import type { ReactNode, CSSProperties } from 'react';
 
-type BadgeVariant = 'green' | 'yellow' | 'red' | 'gray';
+export type BadgeVariant = 'green' | 'yellow' | 'red' | 'gray' | 'neutral';
 
 interface BadgeProps {
   variant: BadgeVariant;
+  className?: string;
   children: ReactNode;
 }
 
@@ -28,10 +29,16 @@ const variantStyles: Record<BadgeVariant, CSSProperties> = {
     color: 'var(--status-gray)',
     border: '1px solid var(--status-gray-border)',
   },
+  neutral: {
+    background: 'var(--status-gray-bg)',
+    color: 'var(--status-gray)',
+    border: '1px solid var(--status-gray-border)',
+  },
 };
 
-export const Badge = ({ variant, children }: BadgeProps) => (
+export const Badge = ({ variant, children, className = '' }: BadgeProps) => (
   <span
+    className={className}
     style={{
       ...variantStyles[variant],
       display: 'inline-flex',
