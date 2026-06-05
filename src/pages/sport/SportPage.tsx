@@ -10,6 +10,7 @@ import { useLoadSportLoans, useSportLoansFilters } from '@/features/load-sport-l
 import { NewSportLoanModal } from '@/features/new-sport-loan/components';
 import type { Inventory } from '@/entities/inventory/model/types';
 import { NewSportItemModal } from '@/features/new-sport-item';
+import { EditSportItemModal } from '@/features/edit-sport-item';
 import './SportPage.css';
 
 export const SportPage = () => {
@@ -43,7 +44,7 @@ export const SportPage = () => {
   // Inventario
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<Inventory | null>(null);
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
-
+  const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   // Préstamos
   const [isNewLoanOpen, setIsNewLoanOpen] = useState(false);
   // ── Derivados ────────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ export const SportPage = () => {
               setIsNewItemOpen(true);
             }}
             onEditItem={() => {
-              console.log('Funcionalidad pendiente');
+              setIsEditItemOpen(true);
             }}
           />
         )}
@@ -116,6 +117,14 @@ export const SportPage = () => {
           setIsNewItemOpen(false);
         }}
         onSuccess={refetchInventory}
+      />
+      <EditSportItemModal
+        isOpen={isEditItemOpen}
+        onClose={() => {
+          setIsEditItemOpen(false);
+        }}
+        onSuccess={refetchInventory}
+        item={selectedInventoryItem}
       />
     </div>
   );
