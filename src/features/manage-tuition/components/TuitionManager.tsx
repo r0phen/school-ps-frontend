@@ -7,10 +7,12 @@ import { InstallmentsGrid } from '@/features/manage-tuition/components/Installme
 import { TuitionSummary } from '@/features/manage-tuition/components/TuitionSummary';
 import { PaymentModal } from '@/features/manage-tuition/components/PaymentModal';
 import type { TuitionInstallmentResponse } from '@/entities/tuition/model/types';
+import { AuditHistoryModal } from '@/features/audit-history/components/AuditHistoryModal';
 
 export const TuitionManager = () => {
   const [studentId, setStudentId] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<TuitionInstallmentResponse | null>(null);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
 
   const { accountData, loading, errorMsg, fetchStudentData, submitPayment, clearData, refetch } =
     useTuition();
@@ -82,7 +84,13 @@ export const TuitionManager = () => {
       {accountData && (
         <>
           <div className="header-actions">
-            <button className="btn-link" onClick={clearData}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                clearData();
+                setStudentId('');
+              }}
+            >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -92,8 +100,8 @@ export const TuitionManager = () => {
                 />
               </svg>
               Limpiar Búsqueda
-            </button>
-            <Button variant="outline">
+            </Button>
+            <Button variant="outline" onClick={() => setIsAuditModalOpen(true)}>
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -112,6 +120,13 @@ export const TuitionManager = () => {
             onEditInstallment={handleOpenModal}
           />
           <TuitionSummary installments={accountData.installments} />
+
+          <AuditHistoryModal
+            isOpen={isAuditModalOpen}
+            onClose={() => setIsAuditModalOpen(false)}
+            studentId={accountData.estudiante_id}
+            studentName={`Estudiante #${accountData.estudiante_id}`}
+          />
         </>
       )}
 
