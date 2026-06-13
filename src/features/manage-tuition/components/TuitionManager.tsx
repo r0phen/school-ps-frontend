@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, useCallback } from 'react';
 import './TuitionManager.css';
 import { Button } from '@/shared/ui/atoms/Button';
 import { useTuition } from '@/features/manage-tuition/hooks/useTuition';
@@ -8,18 +8,35 @@ import { TuitionSummary } from '@/features/manage-tuition/components/TuitionSumm
 import { PaymentModal } from '@/features/manage-tuition/components/PaymentModal';
 import type { TuitionInstallmentResponse } from '@/entities/tuition/model/types';
 import { AuditHistoryModal } from '@/features/audit-history/components/AuditHistoryModal';
+import { SearchStudentForm } from '@/features/search-student/components/SearchStudentForm';
+import type { StudentSearchItem } from '@/entities/student/model/types';
+import { StatusBadge } from '@/entities/student/ui/StatusBadge';
 
 export const TuitionManager = () => {
-  const [studentId, setStudentId] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<TuitionInstallmentResponse | null>(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+
+  // Search State
+  const [searchResults, setSearchResults] = useState<StudentSearchItem[]>([]);
+  const [selectedStudentInfo, setSelectedStudentInfo] = useState<StudentSearchItem | null>(null);
 
   const { accountData, loading, errorMsg, fetchStudentData, submitPayment, clearData, refetch } =
     useTuition();
 
-  const handleSearch = (e: SubmitEvent) => {
-    e.preventDefault();
-    if (studentId.trim()) void fetchStudentData(studentId.trim());
+  const handleSearchSuccess = useCallback((results: StudentSearchItem[]) => {
+    setSearchResults(results);
+  }, []);
+
+  const handleSelectStudentForTuition = (student: StudentSearchItem) => {
+    setSelectedStudentInfo(student);
+    setSearchResults([]);
+    void fetchStudentData(student.documento);
+  };
+
+  const handleClearTuition = () => {
+    clearData();
+    setSelectedStudentInfo(null);
+    setSearchResults([]);
   };
 
   const handleOpenModal = (installment: TuitionInstallmentResponse) => {
@@ -34,63 +51,62 @@ export const TuitionManager = () => {
         <p>Gestión de mensualidades</p>
       </div>
 
-      <div className="card search-section">
-        <div className="search-header">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          Filtros de búsqueda
-        </div>
+      {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
 
-        <div className="search-info">
-          Ingrese la cédula del estudiante para consultar el estado de pensiones.
-        </div>
+      {!accountData && (
+        <>
+          <SearchStudentForm
+            hideDate={true}
+            customInfoText="Ingrese la cédula o nombre del estudiante para consultar el estado de pensiones."
+            onSearchStart={() => setSearchResults([])}
+            onSearchEnd={() => {}}
+            onSearchSuccess={handleSearchSuccess}
+          />
 
-        {errorMsg && <div className="alert alert-error">{errorMsg}</div>}
-
-        <form className="search-form" onSubmit={handleSearch}>
-          <div className="input-group">
-            <label>Cédula del Estudiante</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Ej: 1023456789"
-              value={studentId}
-              onChange={(e) => {
-                setStudentId(e.target.value);
-              }}
-              disabled={loading}
-            />
-          </div>
-          <Button type="submit" size="lg" variant="primary" disabled={loading || !studentId.trim()}>
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            {loading ? 'Buscando...' : 'Buscar'}
-          </Button>
-        </form>
-      </div>
+          {searchResults.length > 0 && (
+            <div className="table-container" style={{ marginTop: '20px' }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Grado</th>
+                    <th>Estado Matrícula</th>
+                    <th style={{ textAlign: 'center' }}>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {searchResults.map((student) => (
+                    <tr key={student.estudiante_id}>
+                      <td>{student.documento}</td>
+                      <td style={{ fontWeight: 500 }}>{student.nombre}</td>
+                      <td>{student.grado_nombre}</td>
+                      <td>
+                        <StatusBadge status={student.estado_matricula} />
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleSelectStudentForTuition(student)}
+                          disabled={loading}
+                        >
+                          Gestionar Pensión
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
 
       {accountData && (
         <>
           <div className="header-actions">
-            <Button
-              variant="outline"
-              onClick={() => {
-                clearData();
-                setStudentId('');
-              }}
-            >
+            <Button variant="outline" onClick={handleClearTuition}>
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -114,7 +130,11 @@ export const TuitionManager = () => {
             </Button>
           </div>
 
-          <StudentInfoCard accountData={accountData} />
+          <StudentInfoCard
+            accountData={accountData}
+            studentName={selectedStudentInfo?.nombre}
+            studentDocument={selectedStudentInfo?.documento}
+          />
           <InstallmentsGrid
             installments={accountData.installments}
             onEditInstallment={handleOpenModal}
@@ -125,7 +145,7 @@ export const TuitionManager = () => {
             isOpen={isAuditModalOpen}
             onClose={() => setIsAuditModalOpen(false)}
             studentId={accountData.estudiante_id}
-            studentName={`Estudiante #${accountData.estudiante_id}`}
+            studentName={selectedStudentInfo?.nombre || `Estudiante #${accountData.estudiante_id}`}
           />
         </>
       )}

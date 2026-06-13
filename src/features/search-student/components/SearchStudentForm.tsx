@@ -9,12 +9,16 @@ interface SearchStudentFormProps {
   onSearchSuccess: (students: StudentSearchItem[]) => void;
   onSearchStart: () => void;
   onSearchEnd: () => void;
+  hideDate?: boolean;
+  customInfoText?: string;
 }
 
 export const SearchStudentForm = ({
   onSearchSuccess,
   onSearchStart,
   onSearchEnd,
+  hideDate = false,
+  customInfoText = 'Ingrese el código o nombre del estudiante y seleccione una fecha para iniciar la búsqueda',
 }: SearchStudentFormProps) => {
   const { loading, fetchStudents } = useSearchStudents();
   const [filters, setFilters] = useState({ documento: '', nombre: '', date: '' });
@@ -76,9 +80,7 @@ export const SearchStudentForm = ({
       <h3 className="search-header">
         <Search size={20} /> Filtros de búsqueda
       </h3>
-      <div className="search-info">
-        Ingrese el código o nombre del estudiante y seleccione una fecha para iniciar la búsqueda
-      </div>
+      <div className="search-info">{customInfoText}</div>
 
       <form onSubmit={handleSubmit}>
         <div className="enrollment-search-grid">
@@ -98,14 +100,16 @@ export const SearchStudentForm = ({
               setFilters({ ...filters, nombre: e.target.value });
             }}
           />
-          <Input
-            label="Fecha"
-            type="date"
-            value={filters.date}
-            onChange={(e) => {
-              setFilters({ ...filters, date: e.target.value });
-            }}
-          />
+          {!hideDate && (
+            <Input
+              label="Fecha"
+              type="date"
+              value={filters.date}
+              onChange={(e) => {
+                setFilters({ ...filters, date: e.target.value });
+              }}
+            />
+          )}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button type="submit" variant="primary" disabled={loading}>
               <Search size={16} style={{ marginRight: '8px' }} />
